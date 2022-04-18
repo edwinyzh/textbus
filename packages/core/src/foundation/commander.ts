@@ -435,16 +435,7 @@ export class Commander {
    * @param ignoreFormatters 在清除格式时，忽略的格式
    */
   cleanFormats(ignoreFormatters: Formatter[] = []) {
-    const selection = this.selection
-    selection.getBlocks().forEach(scope => {
-      if (scope.slot === selection.startSlot &&
-        scope.startIndex <= selection.startOffset!) {
-        scope.startIndex = selection.startOffset!
-      }
-      if (scope.slot === selection.endSlot &&
-        scope.endIndex >= selection.endOffset!) {
-        scope.endIndex = selection.endOffset!
-      }
+    this.selection.getSelectedScopes().forEach(scope => {
       let isDeleteBlockFormat = false
       const slot = scope.slot
       if (scope.startIndex === 0) {

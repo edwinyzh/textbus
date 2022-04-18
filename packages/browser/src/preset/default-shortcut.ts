@@ -151,7 +151,7 @@ export class DefaultShortcut implements Plugin {
     })
     keyboard.addShortcut({
       keymap: {
-        key: 'x',
+        key: 's',
         ctrlKey: true
       },
       action: () => {
