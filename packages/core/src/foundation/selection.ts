@@ -199,7 +199,7 @@ export class Selection {
   /**
    * 选区的公共父组件
    */
-    get commonAncestorComponent(): ComponentInstance | null {
+  get commonAncestorComponent(): ComponentInstance | null {
     let startComponent = this.startSlot?.parent
     let endComponent = this.endSlot?.parent
     if (startComponent === endComponent) {
@@ -777,6 +777,99 @@ export class Selection {
     }
   }
 
+  getScopes(startSlot: Slot,
+            endSlot: Slot,
+            startIndex: number,
+            endIndex: number): SelectedScope[] {
+    const start: SelectedScope[] = []
+    const end: SelectedScope[] = []
+    let startParentComponent: ComponentInstance | null = null
+    let endParentComponent: ComponentInstance | null = null
+
+    let startSlotRefIndex: number | null = null
+    let endSlotRefIndex: number | null = null
+
+    const commonAncestorSlot = this.commonAncestorSlot
+    const commonAncestorComponent = this.commonAncestorComponent
+
+    while (startSlot !== commonAncestorSlot) {
+      start.push({
+        startIndex,
+        endIndex: startSlot.length,
+        slot: startSlot
+      })
+
+      startParentComponent = startSlot.parent!
+
+      const childSlots = startParentComponent.slots
+      const end = childSlots.indexOf(this.endSlot!)
+      startSlotRefIndex = childSlots.indexOf(startSlot)
+      if (startParentComponent !== commonAncestorComponent && end === -1) {
+        start.push(...childSlots.slice(startSlotRefIndex + 1, childSlots.length).map(slot => {
+          return {
+            startIndex: 0,
+            endIndex: slot.length,
+            slot
+          }
+        }))
+      }
+      if (!startParentComponent.parent) {
+        break
+      }
+      startSlot = startParentComponent.parent
+      startIndex = startSlot.indexOf(startParentComponent) + 1
+    }
+    while (endSlot !== commonAncestorSlot) {
+      end.push({
+        startIndex: 0,
+        endIndex,
+        slot: endSlot
+      })
+      endParentComponent = endSlot.parent
+      if (!endParentComponent) {
+        break
+      }
+      const childSlots = endParentComponent.slots
+      const index = childSlots.indexOf(this.startSlot!)
+
+      endSlotRefIndex = childSlots.indexOf(endSlot)
+      if (endParentComponent !== commonAncestorComponent && index === -1) {
+        end.push(...childSlots.slice(0, endSlotRefIndex).map(slot => {
+          return {
+            startIndex: 0,
+            endIndex: slot.length,
+            slot
+          }
+        }).reverse())
+      }
+      if (!endParentComponent.parent) {
+        break
+      }
+      endSlot = endParentComponent.parent
+      endIndex = endSlot.indexOf(endParentComponent)
+    }
+    const result: Omit<SelectedScope, 'isStart' | 'isEnd'>[] = [...start]
+    if (startParentComponent && startParentComponent === endParentComponent) {
+      const slots = startParentComponent.slots.slice(startSlotRefIndex! + 1, endSlotRefIndex!)
+      result.push(...slots.map(slot => {
+        return {
+          startIndex: 0,
+          endIndex: slot.length,
+          slot
+        }
+      }))
+    } else {
+      result.push({
+        startIndex,
+        endIndex,
+        slot: commonAncestorSlot!
+      })
+    }
+    result.push(...end.reverse())
+
+    return result
+  }
+
   private wrapTo(toLeft: boolean) {
     if (!this.isSelected) {
       return
@@ -1102,100 +1195,6 @@ export class Selection {
       startOffset: this.startOffset!,
       endOffset: this.endOffset!
     } : null)
-  }
-
-
-  private getScopes(startSlot: Slot,
-                    endSlot: Slot,
-                    startIndex: number,
-                    endIndex: number): SelectedScope[] {
-    const start: SelectedScope[] = []
-    const end: SelectedScope[] = []
-    let startParentComponent: ComponentInstance | null = null
-    let endParentComponent: ComponentInstance | null = null
-
-    let startSlotRefIndex: number | null = null
-    let endSlotRefIndex: number | null = null
-
-    const commonAncestorSlot = this.commonAncestorSlot
-    const commonAncestorComponent = this.commonAncestorComponent
-
-    while (startSlot !== commonAncestorSlot) {
-      start.push({
-        startIndex,
-        endIndex: startSlot.length,
-        slot: startSlot
-      })
-
-      startParentComponent = startSlot.parent!
-
-      const childSlots = startParentComponent.slots
-      const end = childSlots.indexOf(this.endSlot!)
-      startSlotRefIndex = childSlots.indexOf(startSlot)
-      if (startParentComponent !== commonAncestorComponent && end === -1) {
-        start.push(...childSlots.slice(startSlotRefIndex + 1, childSlots.length).map(slot => {
-          return {
-            startIndex: 0,
-            endIndex: slot.length,
-            slot
-          }
-        }))
-      }
-      if (!startParentComponent.parent) {
-        break
-      }
-      startSlot = startParentComponent.parent
-      startIndex = startSlot.indexOf(startParentComponent) + 1
-    }
-    while (endSlot !== commonAncestorSlot) {
-      end.push({
-        startIndex: 0,
-        endIndex,
-        slot: endSlot
-      })
-      endParentComponent = endSlot.parent
-      if (!endParentComponent) {
-        break
-      }
-      const childSlots = endParentComponent.slots
-      const index = childSlots.indexOf(this.startSlot!)
-
-      endSlotRefIndex = childSlots.indexOf(endSlot)
-      if (endParentComponent !== commonAncestorComponent && index === -1) {
-        end.push(...childSlots.slice(0, endSlotRefIndex).map(slot => {
-          return {
-            startIndex: 0,
-            endIndex: slot.length,
-            slot
-          }
-        }).reverse())
-      }
-      if (!endParentComponent.parent) {
-        break
-      }
-      endSlot = endParentComponent.parent
-      endIndex = endSlot.indexOf(endParentComponent)
-    }
-    const result: Omit<SelectedScope, 'isStart' | 'isEnd'>[] = [...start]
-    if (startParentComponent && startParentComponent === endParentComponent) {
-      const slots = startParentComponent.slots.slice(startSlotRefIndex! + 1, endSlotRefIndex!)
-      result.push(...slots.map(slot => {
-        return {
-          startIndex: 0,
-          endIndex: slot.length,
-          slot
-        }
-      }))
-    } else {
-      result.push({
-        startIndex,
-        endIndex,
-        slot: commonAncestorSlot!
-      })
-    }
-    result.push(...end.reverse())
-
-    return result
   }
 
   private static findTreeNode(paths: number[], component: ComponentInstance): Slot | ComponentInstance | null {

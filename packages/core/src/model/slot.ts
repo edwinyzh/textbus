@@ -564,6 +564,22 @@ export class Slot<T = any> {
     return delta
   }
 
+  /**
+   * 清除插槽格式
+   * @param excludeFormats 要排除的格式
+   * @param startIndex 开始位置
+   * @param endIndex 结束位置
+   */
+  cleanFormats(excludeFormats: Formatter[] = [], startIndex = 0, endIndex = this.length) {
+    this.getFormats().forEach(item => {
+      if (excludeFormats.includes(item.formatter)) {
+        return
+      }
+      this.retain(startIndex)
+      this.retain(endIndex - startIndex, item.formatter, null)
+    })
+  }
+
   private applyFormats(formats: Formats, startIndex: number, offset: number) {
     formats.forEach(keyValue => {
       const key = keyValue[0]

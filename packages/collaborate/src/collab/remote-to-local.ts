@@ -80,18 +80,23 @@ export class RemoteToLocal {
 
   private applySharedSlotToSlot(ev: YEvent, path: YPath, slot: Slot) {
     if (path.length) {
-      path.shift()
-      const delta = (ev.target.parent as YText).toDelta()
-      let componentIndex = 0
-      for (let i = 0; i < delta.length; i++) {
-        const action = delta[i]
-        if (action.insert === ev.target) {
-          break
+      const childPath = path.shift()!
+      if ((childPath as any[]).length === 1) {
+        const delta = (ev.target.parent as YText).toDelta()
+        let componentIndex = 0
+        for (let i = 0; i < delta.length; i++) {
+          const action = delta[i]
+          if (action.insert === ev.target) {
+            break
+          }
+          componentIndex += typeof action.insert === 'string' ? action.insert.length : 1
         }
-        componentIndex += typeof action.insert === 'string' ? action.insert.length : 1
+        const component = slot.getContentAtIndex(componentIndex) as ComponentInstance
+        this.applySharedComponentToComponent(ev, path, component)
+      } else {
+        const component = slot.getContentAtIndex(childPath[0]) as ComponentInstance
+        this.applySharedComponentToComponent(ev, path, component)
       }
-      const component = slot.getContentAtIndex(componentIndex) as ComponentInstance
-      this.applySharedComponentToComponent(ev, path, component)
       return
     }
     if (ev instanceof YTextEvent) {

@@ -436,26 +436,29 @@ export class Commander {
    */
   cleanFormats(ignoreFormatters: Formatter[] = []) {
     this.selection.getSelectedScopes().forEach(scope => {
-      let isDeleteBlockFormat = false
       const slot = scope.slot
       if (scope.startIndex === 0) {
-        if (scope.endIndex === slot.length) {
-          isDeleteBlockFormat = true
-        } else if (scope.endIndex === slot.length - 1) {
+        if (scope.endIndex === slot.length - 1) {
           const lastContent = slot.getContentAtIndex(slot.length - 1)
           if (lastContent === '\n') {
-            isDeleteBlockFormat = true
+            scope.endIndex++
           }
         }
       }
 
-      slot.getFormats().forEach(i => {
-        if (i.formatter.type === FormatType.Block && !isDeleteBlockFormat || ignoreFormatters.includes(i.formatter)) {
-          return
-        }
-        slot.retain(scope.startIndex)
-        slot.retain(scope.endIndex - scope.startIndex, i.formatter, null)
-      })
+      function cleanFormats(slot: Slot, excludeFormatters: Formatter[], startIndex: number, endIndex: number) {
+        slot.cleanFormats(excludeFormatters, startIndex, endIndex)
+
+        slot.sliceContent(startIndex, endIndex).forEach(child => {
+          if (typeof child !== 'string') {
+            child.slots.toArray().forEach(childSlot => {
+              cleanFormats(childSlot, excludeFormatters, 0, childSlot.length)
+            })
+          }
+        })
+      }
+
+      cleanFormats(slot, ignoreFormatters, scope.startIndex, scope.endIndex)
     })
   }
 

@@ -364,7 +364,7 @@ export function useTableMultipleRange(
   const editorContainer = injector.get(EDITOR_CONTAINER)
   const animateBezier = new CubicBezier(0.25, 0.1, 0.25, 0.1)
 
-  const oldGetSelectedScopes = selection.getSelectedScopes
+  const oldGetScopes = selection.getScopes
   const self = useSelf()
 
   const subs: Subscription[] = [
@@ -449,7 +449,7 @@ export function useTableMultipleRange(
     const endPosition = tableRange.endPosition
     const selectedCells = tableRange.selectedCells
 
-    selection.getSelectedScopes = function () {
+    selection.getScopes = function (startSlot, endSlot, startIndex, endIndex) {
       if (selectedCells.length > 1) {
         return selectedCells.map<SelectedScope>(i => {
           return {
@@ -459,7 +459,7 @@ export function useTableMultipleRange(
           }
         })
       }
-      return oldGetSelectedScopes.call(selection)
+      return oldGetScopes.call(selection, startSlot, endSlot, startIndex, endIndex)
     }
 
     const startRect = (renderer.getNativeNodeByVNode(renderer.getVNodeBySlot(startPosition.cell!)!) as HTMLElement).getBoundingClientRect()
@@ -507,12 +507,12 @@ export function useTableMultipleRange(
       if (startCell && endCell) {
         setSelectedCellsAndUpdateMaskStyle(startCell, endCell, containerRect)
       } else {
-        selection.getSelectedScopes = oldGetSelectedScopes
+        selection.getScopes = oldGetScopes
       }
     } else {
       removeMask()
       if (selection.commonAncestorComponent?.name !== self.name) {
-        selection.getSelectedScopes = oldGetSelectedScopes
+        selection.getScopes = oldGetScopes
         nativeSelectionBridge.showNativeMask()
       }
     }
@@ -528,7 +528,7 @@ export function useTableMultipleRange(
   )
 
   onDestroy(() => {
-    selection.getSelectedScopes = oldGetSelectedScopes
+    selection.getScopes = oldGetScopes
     subs.forEach(i => i.unsubscribe())
     nativeSelectionBridge.showNativeMask()
     removeMask()

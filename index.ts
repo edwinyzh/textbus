@@ -3,6 +3,7 @@ import { createEditor } from '@textbus/editor';
 import { RootComponentRef, History, Commander } from '@textbus/core';
 import { Collaborate, CollaborateCursor, RemoteSelection } from '@textbus/collaborate';
 import { WebsocketProvider } from 'y-websocket'
+import { WebrtcProvider } from 'y-webrtc'
 import {
   Map as YMap,
   YArrayEvent,
@@ -50,7 +51,7 @@ const editor = createEditor(document.getElementById('box')!, {
   setup(starter) {
     const collaborate = starter.get(Collaborate)
 
-    const provide = new WebsocketProvider('wss://textbus.io/api', 'collab', collaborate.yDoc)
+    const provide = new WebrtcProvider('textbus', collaborate.yDoc)
 
     const users: User[] = [{
       color: '#f00',
